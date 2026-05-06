@@ -1,29 +1,53 @@
 import express from "express";
-import { capturePage } from "./services/browser.service.js";
+import { processCampaign } from "./services/campaign.service.js";
+import { generatePPT } from "./services/ppt.service.js";
 
 const app = express();
 app.use(express.json());
 
 app.post("/capture", async (req, res) => {
   try {
-    const { url } = req.body;
+    const { targets } = req.body;
 
-    if (!url) {
-      return res.status(400).json({ error: "url is required" });
+    if (!targets || !Array.isArray(targets)) {
+      return res.status(400).json({ error: "targets is required" });
     }
 
-    const result = await capturePage(url);
+    for (const target of targets) {
+      if (!target || typeof target !== "object" || !target.url) {
+        return res.status(400).json({ error: "url is required" });
+      }
+    }
+
+    const { results, summary } = await processCampaign(targets);
+
+    const campaignId = crypto.randomUUID();
+
+    await generatePPT(
+      {
+        ...req.body,
+        results,
+      },
+      campaignId,
+    );
 
     return res.json({
-      campaignId: crypto.randomUUID(),
-      ...result,
+      campaignId,
+      reportUrl: `http://localhost:3000/reports/${campaignId}.pptx`,
+      summary,
+      results,
     });
   } catch (error) {
+    console.error(error);
     return res.status(500).json({
       status: "error",
-      message: "internal error",
     });
   }
+});
+
+app.get("/reports/:id", (req, res) => {
+  const path = `output/${req.params.id}.pptx`;
+  res.download(path);
 });
 
 app.listen(3000, () => {

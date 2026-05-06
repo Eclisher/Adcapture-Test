@@ -13,7 +13,9 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "playwright": "^1.59.1"
+    "p-limit": "^7.3.0",
+    "playwright": "^1.59.1",
+    "pptxgenjs": "^4.0.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
